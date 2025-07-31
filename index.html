@@ -1,309 +1,345 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Объявления</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #2f3237;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 32px;
-      margin-bottom: 30px;
-      color: #333;
-    }
-
-    .columns {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .column {
-      flex: 1;
-      min-width: 300px;
-      border-radius: 10px;
-      padding: 20px;
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-    }
-
-    .column.green {
-      border-left: 8px solid #28a745;
-    }
-
-    .column.red {
-      border-left: 8px solid #dc3545;
-    }
-
-    .nickname-input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 14px;
-    }
-
-    .paste-area {
-      border: 2px dashed #ccc;
-      padding: 15px;
-      min-height: 150px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      background: #fff;
-      outline: none;
-      transition: border 0.3s ease;
-    }
-
-    .paste-area:focus {
-      border-color: #007bff;
-    }
-
-    .image-preview {
-      max-width: 100%;
-      margin-bottom: 10px;
-      border-radius: 4px;
-    }
-
-    .send-button {
-      width: 100%;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    .send-button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-
-    .send-button:not(:disabled):hover {
-      background-color: #0056b3;
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: #28a745;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 30px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      font-size: 14px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.4s ease, transform 0.4s ease;
-      z-index: 9999;
-    }
-
-    .toast.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .toast.hidden {
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Объявления с предпросмотром и Discord webhook</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f5f5f5;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .column {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    width: 350px;
+    box-sizing: border-box;
+  }
+  .column h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 3px solid;
+  }
+  #greenColumn h2 {
+    border-color: green;
+    color: green;
+  }
+  #redColumn h2 {
+    border-color: red;
+    color: red;
+  }
+  label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 6px;
+  }
+  input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    border: 1px solid #aaa;
+    font-size: 14px;
+  }
+  textarea.paste-area {
+    width: 100%;
+    height: 180px;
+    resize: none;
+    border: 2px dashed #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    box-sizing: border-box;
+    font-size: 14px;
+    overflow-y: auto;
+    background: #fff;
+  }
+  .preview-container {
+    width: 100%;
+    max-height: 200px;
+    overflow: hidden;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    background: #fafafa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 4px;
+    display: block;
+  }
+  button {
+    padding: 10px 15px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .announcement {
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 12px;
+    word-wrap: break-word;
+    box-sizing: border-box;
+  }
+  .green-announcement {
+    background-color: #e6f7e6;
+    border: 1px solid green;
+    color: green;
+  }
+  .red-announcement {
+    background-color: #f7e6e6;
+    border: 1px solid red;
+    color: red;
+  }
+  .announcement img {
+    margin-top: 10px;
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 4px;
+    object-fit: contain;
+  }
+  .meta {
+    font-size: 12px;
+    color: #555;
+    margin-top: 8px;
+  }
+  #toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #333;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 25px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    font-weight: bold;
+    z-index: 1000;
+    user-select: none;
+  }
+  #toast.show {
+    opacity: 0.9;
+    pointer-events: auto;
+  }
+  .footer-text {
+    margin-top: 20px;
+    font-size: 13px;
+    color: black;
+    text-align: center;
+    font-weight: 600;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>📢 Отправка объявлений в Discord</h1>
-    <div class="columns">
-      <!-- Зелёная колонка -->
-      <div class="column green">
-        <h2>🟢 Зелёное объявление</h2>
-        <label for="nickname">Никнейм:</label>
-        <input type="text" id="nickname" class="nickname-input" placeholder="Ваш никнейм" />
-        <div id="greenArea" class="paste-area" contenteditable="true" tabindex="0" style="max-width:100%;"></div>
-        <div><strong>Предпросмотр:</strong></div>
-        <div id="greenPreview"></div>
-        <button id="sendGreen" class="send-button" disabled>Отправить зелёное</button>
-      </div>
 
-      <!-- Красная колонка -->
-      <div class="column red">
-        <h2>🔴 Красное объявление</h2>
-        <label for="nickname">Никнейм:</label>
-        <input type="text" id="nickname" class="nickname-input" placeholder="Ваш никнейм" />
-        <div id="redArea" class="paste-area" contenteditable="true" tabindex="0" style="max-width:100%;"></div>
-        <div><strong>Предпросмотр:</strong></div>
-        <div id="redPreview"></div>
-        <button id="sendRed" class="send-button" disabled>Отправить красное</button>
-      </div>
-    </div>
+<h1>Объявления с предпросмотром</h1>
 
-    <!-- Подпись -->
-    <p style="text-align:center; color:#333; margin-top:40px; font-size:14px;">lhaver</p>
+<label for="nicknameInput">Введите никнейм:</label>
+<input type="text" id="nicknameInput" placeholder="Ваш ник" />
+
+<div class="container">
+  <div class="column" id="greenColumn">
+    <h2>Зеленое объявление</h2>
+    <textarea id="greenInput" class="paste-area" placeholder="Вставьте текст сюда и вставьте Ctrl+V изображение"></textarea>
+    <div class="preview-container" id="greenPreview"></div>
+    <button id="sendGreen">Отправить в Discord (Зелёное)</button>
+    <div id="greenAnnouncements"></div>
   </div>
 
-  <!-- Уведомление -->
-  <div id="toast" class="toast hidden">✅ Отправлено!</div>
+  <div class="column" id="redColumn">
+    <h2>Красное объявление</h2>
+    <textarea id="redInput" class="paste-area" placeholder="Вставьте текст сюда и вставьте Ctrl+V изображение"></textarea>
+    <div class="preview-container" id="redPreview"></div>
+    <button id="sendRed">Отправить в Discord (Красное)</button>
+    <div id="redAnnouncements"></div>
+  </div>
+</div>
 
-  <!-- Звук -->
-  <audio id="sendSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1156-pristine.mp3" preload="auto"></audio>
+<div class="footer-text">lhaver</div>
 
-  <script>
-    const greenArea = document.getElementById("greenArea");
-    const redArea = document.getElementById("redArea");
-    const greenPreview = document.getElementById("greenPreview");
-    const redPreview = document.getElementById("redPreview");
-    const sendGreen = document.getElementById("sendGreen");
-    const sendRed = document.getElementById("sendRed");
+<div id="toast"></div>
 
-    let greenImage = null;
-    let redImage = null;
+<audio id="toastSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 
-    function handlePaste(event, previewEl, setImage, button) {
-      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-      for (const item of items) {
-        if (item.type.indexOf("image") !== -1) {
-          const file = item.getAsFile();
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const result = e.target.result;
-            setImage(result);
-            previewEl.innerHTML = `<img src="${result}" class="image-preview" style="max-width:100%; max-height:200px; object-fit:contain; display:block;" />`;
-            button.disabled = false;
-          };
-          reader.readAsDataURL(file);
-        }
+<script>
+  // Ник из localStorage
+  const nicknameInput = document.getElementById('nicknameInput');
+  nicknameInput.value = localStorage.getItem('nickname') || '';
+
+  nicknameInput.addEventListener('input', () => {
+    localStorage.setItem('nickname', nicknameInput.value);
+  });
+
+  function showToast(message = "✅ Отправлено!") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    document.getElementById("toastSound").play();
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
+  }
+
+  function formatDateTime(date) {
+    return date.toLocaleString('ru-RU', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  // Извлечение картинки из paste в preview
+  function extractImageFromPaste(e, previewElement) {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    let imageFound = false;
+    for (const item of items) {
+      if (item.type.indexOf("image") === 0) {
+        const blob = item.getAsFile();
+        const URLObj = window.URL || window.webkitURL;
+        const source = URLObj.createObjectURL(blob);
+        previewElement.innerHTML = `<img src="${source}" class="image-preview" />`;
+        imageFound = true;
+        break;
+      }
+    }
+    if (!imageFound) {
+      previewElement.innerHTML = '';
+    }
+  }
+
+  // Создаем элемент объявления
+  function createAnnouncement(text, imgSrc, nickname, date, isGreen) {
+    const div = document.createElement('div');
+    div.classList.add('announcement');
+    div.classList.add(isGreen ? 'green-announcement' : 'red-announcement');
+
+    const nickLine = document.createElement('div');
+    nickLine.textContent = `Ник: ${nickname || 'Гость'}`;
+    nickLine.style.fontWeight = '700';
+    div.appendChild(nickLine);
+
+    const textLine = document.createElement('div');
+    textLine.textContent = text;
+    div.appendChild(textLine);
+
+    if (imgSrc) {
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      img.className = 'image-preview';
+      div.appendChild(img);
+    }
+
+    const metaLine = document.createElement('div');
+    metaLine.className = 'meta';
+    metaLine.textContent = `Отправлено: ${formatDateTime(date)}`;
+    div.appendChild(metaLine);
+
+    return div;
+  }
+
+  // Обработка отправки
+  async function sendAnnouncement(isGreen) {
+    const textArea = isGreen ? document.getElementById('greenInput') : document.getElementById('redInput');
+    const preview = isGreen ? document.getElementById('greenPreview') : document.getElementById('redPreview');
+    const announcementsContainer = isGreen ? document.getElementById('greenAnnouncements') : document.getElementById('redAnnouncements');
+    const nickname = nicknameInput.value.trim();
+
+    const text = textArea.value.trim();
+    const imgEl = preview.querySelector('img');
+    const imgSrc = imgEl ? imgEl.src : null;
+
+    if (!text && !imgSrc) {
+      alert("Пожалуйста, добавьте текст или изображение.");
+      return;
+    }
+
+    const now = new Date();
+
+    // Добавляем объявление на страницу
+    const announcement = createAnnouncement(text, imgSrc, nickname, now, isGreen);
+    announcementsContainer.prepend(announcement);
+
+    // --- Отправка в Discord webhook ---
+    // Замените URL на свои Discord webhook URL
+    const webhookURL = isGreen ? 'https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ : 'https://discord.com/api/webhooks/1400575914089254933/ELFUVPHElOfYJCzQb56kMsIgvIgQrS735Ij5LbfRRXD3KiMV566Yup3cv8GIDWahVDzb';
+
+    // Формируем содержимое для Discord
+    const content = `**${isGreen ? "Зеленое объявление" : "Красное объявление"}**\n` +
+                    `Ник: ${nickname || 'Гость'}\n` +
+                    `${text}\n` +
+                    `Отправлено: ${formatDateTime(now)}`;
+
+    const formData = new FormData();
+    formData.append('payload_json', JSON.stringify({ content }));
+
+    // Если есть изображение, добавим как файл (Discord webhook поддерживает это)
+    if (imgSrc) {
+      try {
+        // Получаем blob с картинки
+        const response = await fetch(imgSrc);
+        const blob = await response.blob();
+        formData.append('file', blob, 'image.png');
+      } catch (e) {
+        console.warn('Ошибка загрузки изображения для Discord:', e);
       }
     }
 
-    greenArea.addEventListener("paste", (e) =>
-      handlePaste(e, greenPreview, (val) => (greenImage = val), sendGreen)
-    );
-    redArea.addEventListener("paste", (e) =>
-      handlePaste(e, redPreview, (val) => (redImage = val), sendRed)
-    );
-
-    function showToast(message = "✅ Отправлено!") {
-      const toast = document.getElementById("toast");
-
-      toast.textContent = message;
-      toast.classList.remove("hidden");
-      toast.classList.add("show");
-
-      setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.classList.add("hidden"), 400);
-      }, 3000);
-    }
-
-    function sendToDiscord(imageBase64, type) {
-      const webhookURL = "https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ"; // ← Замени на свой Webhook
-
-      const now = new Date();
-      const dateTime = now.toLocaleString(); // дата и время
-      const nicknameInputs = document.querySelectorAll("#nickname");
-      const nickname = nicknameInputs[type === "green" ? 0 : 1].value || "Без ника";
-
-      const prefix = type === "green" ? "🟢 Зелёное объявление" : "🔴 Красное объявление";
-      const message = `${prefix} от ${nickname} (${dateTime})`;
-
-      const base64Data = imageBase64.split(",")[1];
-
-      function b64toBlob(b64Data, contentType = "", sliceSize = 512) {
-        const byteCharacters = atob(b64Data);
-        const byteArrays = [];
-        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-          const slice = byteCharacters.slice(offset, offset + sliceSize);
-          const byteNumbers = new Array(slice.length);
-          for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          byteArrays.push(byteArray);
-        }
-        return new Blob(byteArrays, { type: contentType });
+    fetch(webhookURL, {
+      method: 'POST',
+      body: formData,
+    }).then(res => {
+      if (res.ok) {
+        showToast("✅ Отправлено в Discord!");
+        // Очистка формы и превью
+        textArea.value = '';
+        preview.innerHTML = '';
+      } else {
+        showToast("❌ Ошибка отправки!");
       }
-
-      const blob = b64toBlob(base64Data, "image/png");
-      const formData = new FormData();
-      formData.append("file", blob, "image.png");
-      formData.append("payload_json", JSON.stringify({ content: message }));
-
-      fetch(webhookURL, {
-        method: "POST",
-        body: formData,
-      })
-        .then(() => {
-          showToast();
-          if (type === "green") {
-            greenPreview.innerHTML = "";
-            greenArea.innerHTML = "";
-            greenImage = null;
-            sendGreen.disabled = true;
-          } else {
-            redPreview.innerHTML = "";
-            redArea.innerHTML = "";
-            redImage = null;
-            sendRed.disabled = true;
-          }
-        })
-        .catch((err) => {
-          alert("Ошибка: " + err.message);
-        });
-    }
-
-    sendGreen.addEventListener("click", () => {
-      if (greenImage) {
-        const sound = document.getElementById("sendSound");
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
-
-        sendToDiscord(greenImage, "green");
-      }
+    }).catch(() => {
+      showToast("❌ Ошибка отправки!");
     });
+  }
 
-    sendRed.addEventListener("click", () => {
-      if (redImage) {
-        const sound = document.getElementById("sendSound");
-        sound.currentTime = 0;
-        sound.play().catch(() => {});
+  document.getElementById('greenInput').addEventListener('paste', (e) => {
+    extractImageFromPaste(e, document.getElementById('greenPreview'));
+  });
 
-        sendToDiscord(redImage, "red");
-      }
-    });
+  document.getElementById('redInput').addEventListener('paste', (e) => {
+    extractImageFromPaste(e, document.getElementById('redPreview'));
+  });
 
-    // Сохраняем ник при вводе и синхронизируем оба поля
-    document.querySelectorAll("#nickname").forEach(input => {
-      input.addEventListener("input", (e) => {
-        localStorage.setItem("savedNickname", e.target.value);
-        document.querySelectorAll("#nickname").forEach(el => {
-          if (el !== e.target) el.value = e.target.value;
-        });
-      });
-    });
+  document.getElementById('sendGreen').addEventListener('click', () => sendAnnouncement(true));
+  document.getElementById('sendRed').addEventListener('click', () => sendAnnouncement(false));
+</script>
 
-    // При загрузке подставляем сохранённый ник
-    window.addEventListener("DOMContentLoaded", () => {
-      const saved = localStorage.getItem("savedNickname");
-      if (saved) {
-        document.querySelectorAll("#nickname").forEach(input => {
-          input.value = saved;
-        });
-      }
-    });
-  </script>
 </body>
 </html>
