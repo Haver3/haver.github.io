@@ -37,7 +37,7 @@
           const reader = new FileReader();
           reader.onload = function(e) {
             imageBase64 = e.target.result;
-            preview.innerHTML = `<img src="${imageBase64}" alt="Вставленное изображение" />`;
+            preview.innerHTML = `<img src="${imageBase64}" alt="Вставленное изображение1" />`;
             sendBtn.disabled = false;
           };
           reader.readAsDataURL(file);
