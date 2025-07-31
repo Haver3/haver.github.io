@@ -47,6 +47,15 @@
       border-left: 8px solid #dc3545;
     }
 
+    .nickname-input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
     .paste-area {
       border: 2px dashed #ccc;
       padding: 15px;
@@ -89,7 +98,6 @@
       background-color: #0056b3;
     }
 
-    /* Уведомление */
     .toast {
       position: fixed;
       bottom: 20px;
@@ -123,7 +131,10 @@
       <!-- Зелёная колонка -->
       <div class="column green">
         <h2>🟢 Зелёное объявление</h2>
+        <label for="nickname">Никнейм:</label>
+        <input type="text" id="nickname" class="nickname-input" placeholder="Ваш никнейм" />
         <div id="greenArea" class="paste-area" contenteditable="true" tabindex="0"></div>
+        <div><strong>Предпросмотр:</strong></div>
         <div id="greenPreview"></div>
         <button id="sendGreen" class="send-button" disabled>Отправить зелёное</button>
       </div>
@@ -131,14 +142,25 @@
       <!-- Красная колонка -->
       <div class="column red">
         <h2>🔴 Красное объявление</h2>
+        <label for="nickname">Никнейм:</label>
+        <input type="text" id="nickname" class="nickname-input" placeholder="Ваш никнейм" />
         <div id="redArea" class="paste-area" contenteditable="true" tabindex="0"></div>
+        <div><strong>Предпросмотр:</strong></div>
         <div id="redPreview"></div>
         <button id="sendRed" class="send-button" disabled>Отправить красное</button>
       </div>
     </div>
+
+    <!-- Подпись -->
+    <p style="text-align:center; color:#333; margin-top:40px; font-size:14px;">lhaver</p>
   </div>
 
-  <!-- Скрипт -->
+  <!-- Уведомление -->
+  <div id="toast" class="toast hidden">✅ Отправлено!</div>
+
+  <!-- Звук -->
+  <audio id="sendSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1156-pristine.mp3" preload="auto"></audio>
+
   <script>
     const greenArea = document.getElementById("greenArea");
     const redArea = document.getElementById("redArea");
@@ -174,12 +196,32 @@
       handlePaste(e, redPreview, (val) => (redImage = val), sendRed)
     );
 
+    function showToast(message = "✅ Отправлено!") {
+      const toast = document.getElementById("toast");
+      const sound = document.getElementById("sendSound");
+      sound.currentTime = 0;
+      sound.play();
+
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.classList.add("hidden"), 400);
+      }, 3000);
+    }
+
     function sendToDiscord(imageBase64, type) {
-      const webhookURL = "https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ"; // ← Замени на свой
+      const webhookURL = "https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ"; // ← Замени на свой Webhook
 
       const now = new Date();
-      const timeString = now.toLocaleTimeString();
+      const dateTime = now.toLocaleString(); // дата и время
+      const nicknameInputs = document.querySelectorAll("#nickname");
+      const nickname = nicknameInputs[type === "green" ? 0 : 1].value || "Без ника";
+
       const prefix = type === "green" ? "🟢 Зелёное объявление" : "🔴 Красное объявление";
+      const message = `${prefix} от ${nickname} (${dateTime})`;
 
       const base64Data = imageBase64.split(",")[1];
 
@@ -201,15 +243,14 @@
       const blob = b64toBlob(base64Data, "image/png");
       const formData = new FormData();
       formData.append("file", blob, "image.png");
-      formData.append("payload_json", JSON.stringify({ content: `${prefix} в ${timeString}` }));
+      formData.append("payload_json", JSON.stringify({ content: message }));
 
       fetch(webhookURL, {
         method: "POST",
         body: formData,
       })
         .then(() => {
-          showToast(); // показываем уведомление
-
+          showToast();
           if (type === "green") {
             greenPreview.innerHTML = "";
             greenArea.innerHTML = "";
@@ -227,18 +268,6 @@
         });
     }
 
-    function showToast(message = "✅ Отправлено!") {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.classList.remove("hidden");
-      toast.classList.add("show");
-
-      setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.classList.add("hidden"), 400);
-      }, 3000);
-    }
-
     sendGreen.addEventListener("click", () => {
       if (greenImage) sendToDiscord(greenImage, "green");
     });
@@ -246,9 +275,26 @@
     sendRed.addEventListener("click", () => {
       if (redImage) sendToDiscord(redImage, "red");
     });
-  </script>
 
-  <!-- Уведомление -->
-  <div id="toast" class="toast hidden">✅ Отправлено!</div>
+    // Сохраняем ник при вводе и синхронизируем оба поля
+    document.querySelectorAll("#nickname").forEach(input => {
+      input.addEventListener("input", (e) => {
+        localStorage.setItem("savedNickname", e.target.value);
+        document.querySelectorAll("#nickname").forEach(el => {
+          if (el !== e.target) el.value = e.target.value;
+        });
+      });
+    });
+
+    // При загрузке подставляем сохранённый ник
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = localStorage.getItem("savedNickname");
+      if (saved) {
+        document.querySelectorAll("#nickname").forEach(input => {
+          input.value = saved;
+        });
+      }
+    });
+  </script>
 </body>
 </html>
