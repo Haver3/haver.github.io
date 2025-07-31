@@ -1,47 +1,33 @@
-/* Контейнер для области вставки */
-.paste-area {
-  border: 2px dashed #ccc;
-  padding: 20px;
-  min-height: 150px;
-  margin-bottom: 15px;
-  border-radius: 8px;
-  background-color: #fafafa;
-  outline: none;
-  cursor: text;
-  transition: border-color 0.3s ease;
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  z-index: 9999;
 }
 
-.paste-area:focus {
-  border-color: #007bff;
-  background-color: #fff;
-  box-shadow: 0 0 8px rgba(0,123,255,0.3);
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-/* Превью изображения */
+.toast.hidden {
+  display: none;
+}
+
 .image-preview {
   max-width: 100%;
-  margin-top: 10px;
-  border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-/* Кнопка отправки */
-.send-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 12px 25px;
-  font-size: 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.send-button:disabled {
-  background-color: #a0c5f8;
-  cursor: not-allowed;
-}
-
-.send-button:not(:disabled):hover {
-  background-color: #0056b3;
+  max-height: 200px; /* Можно настроить высоту */
+  margin-bottom: 10px;
+  border-radius: 4px;
+  object-fit: contain;
+  display: block;
 }
