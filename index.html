@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+  
 <head>
   <meta charset="UTF-8" />
   <title>Вставка изображения и отправка в Discord</title>
@@ -14,7 +15,18 @@
       max-width: 100%;
       margin-top: 10px;
     }
+    
   </style>
+ <div
+  id="pasteArea"
+  class="paste-area"
+  contenteditable="true"
+  tabindex="0"
+></div>
+
+<div id="preview" class="image-preview-container"></div>
+
+<button id="sendBtn" class="send-button" disabled>Отправить в Discord</button>  
 </head>
 <body>
   <h1>Вставьте изображение из буфера (Ctrl+V) сюда</h1>
