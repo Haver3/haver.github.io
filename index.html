@@ -6,13 +6,33 @@
   <style>
     body {
       font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #e9ecef;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 30px;
+      color: #333;
+    }
+
+    .columns {
       display: flex;
       gap: 20px;
-      padding: 20px;
+      flex-wrap: wrap;
     }
 
     .column {
       flex: 1;
+      min-width: 300px;
       border-radius: 10px;
       padding: 20px;
       background: #f9f9f9;
@@ -57,31 +77,68 @@
       font-size: 16px;
       border-radius: 6px;
       cursor: pointer;
+      transition: background-color 0.3s ease;
     }
 
     .send-button:disabled {
       background-color: #cccccc;
       cursor: not-allowed;
     }
+
+    .send-button:not(:disabled):hover {
+      background-color: #0056b3;
+    }
+
+    /* Уведомление */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      font-size: 14px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
-  <!-- Зелёная колонка -->
-  <div class="column green">
-    <h2>🟢 Зелёное объявление</h2>
-    <div id="greenArea" class="paste-area" contenteditable="true" tabindex="0"></div>
-    <div id="greenPreview"></div>
-    <button id="sendGreen" class="send-button" disabled>Отправить зелёное</button>
+  <div class="container">
+    <h1>📢 Отправка объявлений в Discord</h1>
+    <div class="columns">
+      <!-- Зелёная колонка -->
+      <div class="column green">
+        <h2>🟢 Зелёное объявление</h2>
+        <div id="greenArea" class="paste-area" contenteditable="true" tabindex="0"></div>
+        <div id="greenPreview"></div>
+        <button id="sendGreen" class="send-button" disabled>Отправить зелёное</button>
+      </div>
+
+      <!-- Красная колонка -->
+      <div class="column red">
+        <h2>🔴 Красное объявление</h2>
+        <div id="redArea" class="paste-area" contenteditable="true" tabindex="0"></div>
+        <div id="redPreview"></div>
+        <button id="sendRed" class="send-button" disabled>Отправить красное</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Красная колонка -->
-  <div class="column red">
-    <h2>🔴 Красное объявление</h2>
-    <div id="redArea" class="paste-area" contenteditable="true" tabindex="0"></div>
-    <div id="redPreview"></div>
-    <button id="sendRed" class="send-button" disabled>Отправить красное</button>
-  </div>
-
+  <!-- Скрипт -->
   <script>
     const greenArea = document.getElementById("greenArea");
     const redArea = document.getElementById("redArea");
@@ -118,10 +175,10 @@
     );
 
     function sendToDiscord(imageBase64, type) {
-      const webhookURL = "https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ";
+      const webhookURL = "https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ"; // ← Замени на свой
+
       const now = new Date();
       const timeString = now.toLocaleTimeString();
-
       const prefix = type === "green" ? "🟢 Зелёное объявление" : "🔴 Красное объявление";
 
       const base64Data = imageBase64.split(",")[1];
@@ -144,17 +201,15 @@
       const blob = b64toBlob(base64Data, "image/png");
       const formData = new FormData();
       formData.append("file", blob, "image.png");
-      formData.append(
-        "payload_json",
-        JSON.stringify({ content: `${prefix} в ${timeString}` })
-      );
+      formData.append("payload_json", JSON.stringify({ content: `${prefix} в ${timeString}` }));
 
       fetch(webhookURL, {
         method: "POST",
         body: formData,
       })
         .then(() => {
-          alert("Отправлено!");
+          showToast(); // показываем уведомление
+
           if (type === "green") {
             greenPreview.innerHTML = "";
             greenArea.innerHTML = "";
@@ -172,6 +227,18 @@
         });
     }
 
+    function showToast(message = "✅ Отправлено!") {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.classList.add("hidden"), 400);
+      }, 3000);
+    }
+
     sendGreen.addEventListener("click", () => {
       if (greenImage) sendToDiscord(greenImage, "green");
     });
@@ -180,5 +247,8 @@
       if (redImage) sendToDiscord(redImage, "red");
     });
   </script>
+
+  <!-- Уведомление -->
+  <div id="toast" class="toast hidden">✅ Отправлено!</div>
 </body>
 </html>
