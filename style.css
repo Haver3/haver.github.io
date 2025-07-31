@@ -25,9 +25,15 @@
 
 .image-preview {
   max-width: 100%;
-  max-height: 200px; /* Можно настроить высоту */
+  max-height: 200px;
+  width: auto;
+  height: auto;
   margin-bottom: 10px;
   border-radius: 4px;
-  object-fit: contain;
   display: block;
+}
+
+#greenPreview, #redPreview {
+  max-width: 100%;
+  overflow: hidden;
 }
