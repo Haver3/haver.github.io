@@ -23,6 +23,19 @@
   display: none;
 }
 
+#greenPreview, #redPreview {
+  max-width: 100%;
+  overflow: hidden;
+  word-wrap: break-word; /* чтобы текст не ломал верстку */
+  box-sizing: border-box;
+}
+
+.paste-area {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
 .image-preview {
   max-width: 100%;
   max-height: 200px;
@@ -31,9 +44,10 @@
   margin-bottom: 10px;
   border-radius: 4px;
   display: block;
+  object-fit: contain; /* масштабируем без искажений */
 }
 
-#greenPreview, #redPreview {
+.column {
   max-width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
 }
