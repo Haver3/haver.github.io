@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Вставка изображения и отправка в Discord</title>
+  <style>
+    #pasteArea {
+      border: 2px dashed #ccc;
+      padding: 20px;
+      min-height: 150px;
+      margin-bottom: 10px;
+    }
+    img {
+      max-width: 100%;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Вставьте изображение из буфера (Ctrl+V) сюда</h1>
+  <div id="pasteArea" contenteditable="true" tabindex="0"></div>
+  <button id="sendBtn" disabled>Отправить в Discord</button>
+  <div id="preview"></div>
+
+  <script>
+    const pasteArea = document.getElementById('pasteArea');
+    const sendBtn = document.getElementById('sendBtn');
+    const preview = document.getElementById('preview');
+
+    let imageBase64 = null;
+
+    pasteArea.addEventListener('paste', (event) => {
+      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            imageBase64 = e.target.result;
+            preview.innerHTML = `<img src="${imageBase64}" alt="Вставленное изображение" />`;
+            sendBtn.disabled = false;
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+
+    sendBtn.addEventListener('click', () => {
+      if (!imageBase64) {
+        alert('Вставьте изображение перед отправкой!');
+        return;
+      }
+
+      const discordWebhookURL = 'ТВОЙ_DISCORD_WEBHOOK_URL_ЗДЕСЬ';
+
+      // Преобразуем base64 в Blob
+      function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+
+        for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+          const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+          const byteNumbers = new Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+
+        return new Blob(byteArrays, { type: contentType });
+      }
+
+      // Убираем префикс data:image/png;base64,
+      const base64Data = imageBase64.split(',')[1];
+      const blob = b64toBlob(base64Data, 'image/png');
+
+      const formData = new FormData();
+      formData.append('file', blob, 'image.png');
+      formData.append('payload_json', JSON.stringify({ content: 'Новое изображение из формы' }));
+
+      fetch(discordWebhookURL, {
+        method: 'POST',
+        body: formData
+      })
+      .then(() => {
+        alert('Отправлено в Discord!');
+        preview.innerHTML = '';
+        pasteArea.innerHTML = '';
+        sendBtn.disabled = true;
+        imageBase64 = null;
+      })
+      .catch((err) => {
+        alert('Ошибка при отправке: ' + err.message);
+      });
+    });
+  </script>
+</body>
+</html>
