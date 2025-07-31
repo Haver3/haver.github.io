@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Объявления с предпросмотром и Discord webhook</title>
+<title>Объявления </title>
 <style>
   body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background: #f5f5f5;
+    background: #2a313c;
   }
   h1 {
     text-align: center;
     margin-bottom: 20px;
+    color: #e6f7e6
   }
   .container {
     display: flex;
@@ -21,7 +22,7 @@
     flex-wrap: wrap;
   }
   .column {
-    background: #fff;
+    background: #444444;
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -53,20 +54,20 @@
     padding: 7px;
     margin-bottom: 15px;
     border-radius: 5px;
-    border: 1px solid #aaa;
+    border: 1px solid #e4e4e4;
     font-size: 14px;
   }
   textarea.paste-area {
     width: 100%;
     height: 180px;
     resize: none;
-    border: 2px dashed #ccc;
+    border: 2px dashed #000000;
     border-radius: 6px;
     padding: 10px;
     box-sizing: border-box;
     font-size: 14px;
     overflow-y: auto;
-    background: #fff;
+    background: #868686;
   }
   .preview-container {
     width: 100%;
@@ -74,7 +75,7 @@
     overflow: hidden;
     border-radius: 6px;
     margin-bottom: 15px;
-    background: #fafafa;
+    background: #a1fdf58e;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -90,7 +91,7 @@
     padding: 10px 15px;
     border: none;
     background-color: #007bff;
-    color: white;
+    color: rgb(112, 155, 247);
     border-radius: 6px;
     font-size: 16px;
     cursor: pointer;
@@ -156,18 +157,27 @@
     text-align: center;
     font-weight: 600;
   }
+  #nicknameInput {
+  width: 150px;       /* фиксированная небольшая ширина */
+  height: 30px;       /* высота поменьше */
+  font-size: 14px;    /* чуть поменьше шрифт */
+  padding: 4px 8px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  border: 1px solid #aaa;
+}
 </style>
 </head>
 <body>
 
-<h1>Объявления с предпросмотром</h1>
+<h1>📢Отправка объявлений в Discord</h1>
 
 <label for="nicknameInput">Введите никнейм:</label>
 <input type="text" id="nicknameInput" placeholder="Ваш ник" />
 
 <div class="container">
   <div class="column" id="greenColumn">
-    <h2>Зеленое объявление</h2>
+    <h2>🟢Зеленое объявление</h2>
     <textarea id="greenInput" class="paste-area" placeholder="Вставьте текст сюда и вставьте Ctrl+V изображение"></textarea>
     <div class="preview-container" id="greenPreview"></div>
     <button id="sendGreen">Отправить в Discord (Зелёное)</button>
@@ -175,7 +185,7 @@
   </div>
 
   <div class="column" id="redColumn">
-    <h2>Красное объявление</h2>
+    <h2>🔴Красное объявление</h2>
     <textarea id="redInput" class="paste-area" placeholder="Вставьте текст сюда и вставьте Ctrl+V изображение"></textarea>
     <div class="preview-container" id="redPreview"></div>
     <button id="sendRed">Отправить в Discord (Красное)</button>
@@ -183,11 +193,11 @@
   </div>
 </div>
 
-<div class="footer-text">lhaver</div>
+<div class="footer-text">@LHAVER</div>
 
 <div id="toast"></div>
 
-<audio id="toastSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="toastSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg"></audio>
 
 <script>
   // Ник из localStorage
@@ -292,9 +302,8 @@
     const webhookURL = isGreen ? 'https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ' : 'https://discord.com/api/webhooks/1400575914089254933/ELFUVPHElOfYJCzQb56kMsIgvIgQrS735Ij5LbfRRXD3KiMV566Yup3cv8GIDWahVDzb';
 
     // Формируем содержимое для Discord
-    const content = `**${isGreen ? "Зеленое объявление" : "Красное объявление"}**\n` +
+    const content = `**${isGreen ? "🟢Зеленое объявление" : "🔴Красное объявление"}**\n` +
                     `Ник: ${nickname || 'Гость'}\n` +
-                    `${text}\n` +
                     `Отправлено: ${formatDateTime(now)}`;
 
     const formData = new FormData();
