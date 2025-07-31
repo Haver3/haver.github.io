@@ -1,112 +1,183 @@
 <!DOCTYPE html>
 <html lang="ru">
-  
 <head>
   <meta charset="UTF-8" />
-  <title>Вставка изображения и отправка в Discord</title>
+  <title>Объявления</title>
   <style>
-    #pasteArea {
-      border: 2px dashed #ccc;
+    body {
+      font-family: sans-serif;
+      display: flex;
+      gap: 20px;
       padding: 20px;
+    }
+
+    .column {
+      flex: 1;
+      border-radius: 10px;
+      padding: 20px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+    }
+
+    .column.green {
+      border-left: 8px solid #28a745;
+    }
+
+    .column.red {
+      border-left: 8px solid #dc3545;
+    }
+
+    .paste-area {
+      border: 2px dashed #ccc;
+      padding: 15px;
       min-height: 150px;
       margin-bottom: 10px;
+      border-radius: 6px;
+      background: #fff;
+      outline: none;
+      transition: border 0.3s ease;
     }
-    img {
+
+    .paste-area:focus {
+      border-color: #007bff;
+    }
+
+    .image-preview {
       max-width: 100%;
-      margin-top: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
     }
-    
+
+    .send-button {
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .send-button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
   </style>
- <div
-  id="pasteArea"
-  class="paste-area"
-  contenteditable="true"
-  tabindex="0"
-></div>
-
-<div id="preview" class="image-preview-container"></div>
-
-<button id="sendBtn" class="send-button" disabled>Отправить в Discord</button>  
 </head>
 <body>
-  <h1>Вставьте изображение из буфера (Ctrl+V) сюда</h1>
-  <div id="pasteArea" contenteditable="true" tabindex="0"></div>
-  <button id="sendBtn" disabled>Отправить в Discord</button>
-  <div id="preview"></div>
+  <!-- Зелёная колонка -->
+  <div class="column green">
+    <h2>🟢 Зелёное объявление</h2>
+    <div id="greenArea" class="paste-area" contenteditable="true" tabindex="0"></div>
+    <div id="greenPreview"></div>
+    <button id="sendGreen" class="send-button" disabled>Отправить зелёное</button>
+  </div>
+
+  <!-- Красная колонка -->
+  <div class="column red">
+    <h2>🔴 Красное объявление</h2>
+    <div id="redArea" class="paste-area" contenteditable="true" tabindex="0"></div>
+    <div id="redPreview"></div>
+    <button id="sendRed" class="send-button" disabled>Отправить красное</button>
+  </div>
 
   <script>
-    const pasteArea = document.getElementById('pasteArea');
-    const sendBtn = document.getElementById('sendBtn');
-    const preview = document.getElementById('preview');
+    const greenArea = document.getElementById("greenArea");
+    const redArea = document.getElementById("redArea");
+    const greenPreview = document.getElementById("greenPreview");
+    const redPreview = document.getElementById("redPreview");
+    const sendGreen = document.getElementById("sendGreen");
+    const sendRed = document.getElementById("sendRed");
 
-    let imageBase64 = null;
+    let greenImage = null;
+    let redImage = null;
 
-    pasteArea.addEventListener('paste', (event) => {
+    function handlePaste(event, previewEl, setImage, button) {
       const items = (event.clipboardData || event.originalEvent.clipboardData).items;
       for (const item of items) {
-        if (item.type.indexOf('image') !== -1) {
+        if (item.type.indexOf("image") !== -1) {
           const file = item.getAsFile();
           const reader = new FileReader();
-          reader.onload = function(e) {
-            imageBase64 = e.target.result;
-            preview.innerHTML = `<img src="${imageBase64}" alt="Вставленное изображение1" />`;
-            sendBtn.disabled = false;
+          reader.onload = function (e) {
+            const result = e.target.result;
+            setImage(result);
+            previewEl.innerHTML = `<img src="${result}" class="image-preview" />`;
+            button.disabled = false;
           };
           reader.readAsDataURL(file);
         }
       }
-    });
+    }
 
-    sendBtn.addEventListener('click', () => {
-      if (!imageBase64) {
-        alert('Вставьте изображение перед отправкой!');
-        return;
-      }
+    greenArea.addEventListener("paste", (e) =>
+      handlePaste(e, greenPreview, (val) => (greenImage = val), sendGreen)
+    );
+    redArea.addEventListener("paste", (e) =>
+      handlePaste(e, redPreview, (val) => (redImage = val), sendRed)
+    );
 
-      const discordWebhookURL = 'https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ';
+    function sendToDiscord(imageBase64, type) {
+      const webhookURL = "https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ";
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
 
-      // Преобразуем base64 в Blob
-      function b64toBlob(b64Data, contentType = '', sliceSize = 512) {
+      const prefix = type === "green" ? "🟢 Зелёное объявление" : "🔴 Красное объявление";
+
+      const base64Data = imageBase64.split(",")[1];
+
+      function b64toBlob(b64Data, contentType = "", sliceSize = 512) {
         const byteCharacters = atob(b64Data);
         const byteArrays = [];
-
         for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
           const slice = byteCharacters.slice(offset, offset + sliceSize);
-
           const byteNumbers = new Array(slice.length);
           for (let i = 0; i < slice.length; i++) {
             byteNumbers[i] = slice.charCodeAt(i);
           }
-
           const byteArray = new Uint8Array(byteNumbers);
           byteArrays.push(byteArray);
         }
-
         return new Blob(byteArrays, { type: contentType });
       }
 
-      // Убираем префикс data:image/png;base64,
-      const base64Data = imageBase64.split(',')[1];
-      const blob = b64toBlob(base64Data, 'image/png');
-
+      const blob = b64toBlob(base64Data, "image/png");
       const formData = new FormData();
-      formData.append('file', blob, 'image.png');
-      formData.append('payload_json', JSON.stringify({ content: 'Новое изображение из формы' }));
+      formData.append("file", blob, "image.png");
+      formData.append(
+        "payload_json",
+        JSON.stringify({ content: `${prefix} в ${timeString}` })
+      );
 
-      fetch(discordWebhookURL, {
-        method: 'POST',
-        body: formData
+      fetch(webhookURL, {
+        method: "POST",
+        body: formData,
       })
-      .then(() => {
-        alert('Отправлено в Discord!');
-        preview.innerHTML = '';
-        pasteArea.innerHTML = '';
-        sendBtn.disabled = true;
-        imageBase64 = null;
-      })
-      .catch((err) => {
-        alert('Ошибка при отправке: ' + err.message);
-      });
+        .then(() => {
+          alert("Отправлено!");
+          if (type === "green") {
+            greenPreview.innerHTML = "";
+            greenArea.innerHTML = "";
+            greenImage = null;
+            sendGreen.disabled = true;
+          } else {
+            redPreview.innerHTML = "";
+            redArea.innerHTML = "";
+            redImage = null;
+            sendRed.disabled = true;
+          }
+        })
+        .catch((err) => {
+          alert("Ошибка: " + err.message);
+        });
+    }
+
+    sendGreen.addEventListener("click", () => {
+      if (greenImage) sendToDiscord(greenImage, "green");
+    });
+
+    sendRed.addEventListener("click", () => {
+      if (redImage) sendToDiscord(redImage, "red");
     });
   </script>
 </body>
