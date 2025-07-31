@@ -198,9 +198,6 @@
 
     function showToast(message = "✅ Отправлено!") {
       const toast = document.getElementById("toast");
-      const sound = document.getElementById("sendSound");
-      sound.currentTime = 0;
-      sound.play();
 
       toast.textContent = message;
       toast.classList.remove("hidden");
@@ -269,11 +266,23 @@
     }
 
     sendGreen.addEventListener("click", () => {
-      if (greenImage) sendToDiscord(greenImage, "green");
+      if (greenImage) {
+        const sound = document.getElementById("sendSound");
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+
+        sendToDiscord(greenImage, "green");
+      }
     });
 
     sendRed.addEventListener("click", () => {
-      if (redImage) sendToDiscord(redImage, "red");
+      if (redImage) {
+        const sound = document.getElementById("sendSound");
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+
+        sendToDiscord(redImage, "red");
+      }
     });
 
     // Сохраняем ник при вводе и синхронизируем оба поля
