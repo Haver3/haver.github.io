@@ -200,76 +200,212 @@
 <audio id="toastSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg"></audio>
 
 <script>
-  // ... остальной код без изменений
+  // Ник из localStorage
+  const nicknameInput = document.getElementById('nicknameInput');
+  nicknameInput.value = localStorage.getItem('nickname') || '';
 
+  nicknameInput.addEventListener('input', () => {
+    localStorage.setItem('nickname', nicknameInput.value);
+  });
+
+  function showToast(message = "✅ Отправлено!") {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    document.getElementById("toastSound").play();
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
+  }
+
+  function formatDateTime(date) {
+    return date.toLocaleString('ru-RU', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
+
+  // Счётчик объявлений с localStorage
+  let announcementCounter = parseInt(localStorage.getItem('announcementCounter')) || 0;
+
+  // Извлечение картинки из paste в preview
+  function extractImageFromPaste(e, previewElement) {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    let imageFound = false;
+    for (const item of items) {
+      if (item.type.indexOf("image") === 0) {
+        const blob = item.getAsFile();
+        const URLObj = window.URL || window.webkitURL;
+        const source = URLObj.createObjectURL(blob);
+        previewElement.innerHTML = `<img src="${source}" class="image-preview" />`;
+        imageFound = true;
+        break;
+      }
+    }
+    if (!imageFound) {
+      previewElement.innerHTML = '';
+    }
+  }
+
+  // Создаем элемент объявления с нумерацией
+  function createAnnouncement(text, imgSrc, nickname, date, isGreen) {
+    announcementCounter++;
+    localStorage.setItem('announcementCounter', announcementCounter);
+
+    const div = document.createElement('div');
+    div.classList.add('announcement');
+    div.classList.add(isGreen ? 'green-announcement' : 'red-announcement');
+
+    const nickLine = document.createElement('div');
+    nickLine.textContent = `#${announcementCounter} Ник: ${nickname || 'Гость'}`;
+    nickLine.style.fontWeight = '700';
+    div.appendChild(nickLine);
+
+    const textLine = document.createElement('div');
+    textLine.textContent = text;
+    div.appendChild(textLine);
+
+    if (imgSrc) {
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      img.className = 'image-preview';
+      div.appendChild(img);
+    }
+
+    const metaLine = document.createElement('div');
+    metaLine.className = 'meta';
+    metaLine.textContent = `Отправлено: ${formatDateTime(date)}`;
+    div.appendChild(metaLine);
+
+    return div;
+  }
+
+  // Обработка отправки
   async function sendAnnouncement(isGreen) {
     const textArea = isGreen ? document.getElementById('greenInput') : document.getElementById('redInput');
     const preview = isGreen ? document.getElementById('greenPreview') : document.getElementById('redPreview');
     const announcementsContainer = isGreen ? document.getElementById('greenAnnouncements') : document.getElementById('redAnnouncements');
-    const nickname = nicknameInput.value.trim();
+    const nickname = nicknameInput.value.trim() || 'Гость';
 
     const text = textArea.value.trim();
-    const imgEl = preview.querySelector('img');
-    const imgSrc = imgEl ? imgEl.src : null;
-
-    if (!text && !imgSrc) {
-      alert("Пожалуйста, добавьте текст или изображение.");
+    if (!text) {
+      alert("Введите текст объявления!");
       return;
     }
 
+    // Получаем изображение из превью (если есть)
+    const imgElement = preview.querySelector('img');
+    const imgSrc = imgElement ? imgElement.src : null;
+
     const now = new Date();
 
-    // Добавляем объявление на страницу
-    const announcement = createAnnouncement(text, imgSrc, nickname, now, isGreen);
-    announcementsContainer.prepend(announcement);
+    // Создаем и добавляем в контейнер объявление с нумерацией
+    const announcementElement = createAnnouncement(text, imgSrc, nickname, now, isGreen);
+    announcementsContainer.prepend(announcementElement);
 
-    const webhookURL = isGreen
-      ? 'https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ'
-      : 'https://discord.com/api/webhooks/1400575914089254933/ELFUVPHElOfYJCzQb56kMsIgvIgQrS735Ij5LbfRRXD3KiMV566Yup3cv8GIDWahVDzb';
+    // Сохраняем объявление в localStorage
+    saveAnnouncementsToStorage();
 
-    const content = `**${isGreen ? "🟢Зеленое объявление" : "🔴Красное объявление"}**\n` +
-                    `Ник: ${nickname || 'Гость'}\n` +
-                    `Отправлено: ${formatDateTime(now)}`;
+    // Очистка полей
+    textArea.value = '';
+    preview.innerHTML = '';
 
-    const formData = new FormData();
-    formData.append('payload_json', JSON.stringify({ content }));
-
-    if (imgSrc) {
-      try {
-        const response = await fetch(imgSrc);
-        const blob = await response.blob();
-        formData.append('file', blob, 'image.png');
-
-        // 🔽 Автоматическое сохранение картинки на компьютер
-        const link = document.createElement('a');
-        link.href = imgSrc;
-        link.download = `${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-      } catch (e) {
-        console.warn('Ошибка загрузки изображения:', e);
-      }
-    }
-
-    fetch(webhookURL, {
-      method: 'POST',
-      body: formData,
-    }).then(res => {
-      if (res.ok) {
-        showToast("✅ Отправлено в Discord!");
-        textArea.value = '';
-        preview.innerHTML = '';
-      } else {
-        showToast("❌ Ошибка отправки!");
-      }
-    }).catch(() => {
-      showToast("❌ Ошибка отправки!");
-    });
+    showToast();
   }
 
-  // ... остальной код без изменений
+  // Сохраняем все объявления в localStorage
+  function saveAnnouncementsToStorage() {
+    const greenContainer = document.getElementById('greenAnnouncements');
+    const redContainer = document.getElementById('redAnnouncements');
+
+    const greenAnnouncements = [];
+    for (const child of greenContainer.children) {
+      greenAnnouncements.push({
+        text: child.children[1].textContent,
+        imgSrc: child.querySelector('img')?.src || null,
+        nickname: child.children[0].textContent.split(' Ник: ')[1] || 'Гость',
+        date: child.children[2].textContent.replace('Отправлено: ', '')
+      });
+    }
+
+    const redAnnouncements = [];
+    for (const child of redContainer.children) {
+      redAnnouncements.push({
+        text: child.children[1].textContent,
+        imgSrc: child.querySelector('img')?.src || null,
+        nickname: child.children[0].textContent.split(' Ник: ')[1] || 'Гость',
+        date: child.children[2].textContent.replace('Отправлено: ', '')
+      });
+    }
+
+    localStorage.setItem('greenAnnouncements', JSON.stringify(greenAnnouncements));
+    localStorage.setItem('redAnnouncements', JSON.stringify(redAnnouncements));
+  }
+
+  // Загрузка объявлений из localStorage при загрузке страницы
+  function loadAnnouncementsFromStorage() {
+    const greenContainer = document.getElementById('greenAnnouncements');
+    const redContainer = document.getElementById('redAnnouncements');
+
+    const greenAnnouncements = JSON.parse(localStorage.getItem('greenAnnouncements')) || [];
+    const redAnnouncements = JSON.parse(localStorage.getItem('redAnnouncements')) || [];
+
+    for (const item of greenAnnouncements) {
+      const date = new Date(item.date);
+      const div = createAnnouncement(item.text, item.imgSrc, item.nickname, date, true);
+      greenContainer.appendChild(div);
+    }
+
+    for (const item of redAnnouncements) {
+      const date = new Date(item.date);
+      const div = createAnnouncement(item.text, item.imgSrc, item.nickname, date, false);
+      redContainer.appendChild(div);
+    }
+  }
+
+  // Восстановление счётчика при загрузке (если объявлений в хранилище есть, берём максимальный номер)
+  function restoreCounterFromStorage() {
+    const allNumbers = [];
+    const greenContainer = document.getElementById('greenAnnouncements');
+    const redContainer = document.getElementById('redAnnouncements');
+
+    function extractNumberFromNickLine(text) {
+      const match = text.match(/^#(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    }
+
+    for (const child of greenContainer.children) {
+      allNumbers.push(extractNumberFromNickLine(child.children[0].textContent));
+    }
+    for (const child of redContainer.children) {
+      allNumbers.push(extractNumberFromNickLine(child.children[0].textContent));
+    }
+
+    if (allNumbers.length > 0) {
+      announcementCounter = Math.max(...allNumbers);
+      localStorage.setItem('announcementCounter', announcementCounter);
+    }
+  }
+
+  // Обработчики вставки картинок в textarea
+  document.getElementById('greenInput').addEventListener('paste', (e) => {
+    extractImageFromPaste(e, document.getElementById('greenPreview'));
+  });
+
+  document.getElementById('redInput').addEventListener('paste', (e) => {
+    extractImageFromPaste(e, document.getElementById('redPreview'));
+  });
+
+  // Обработчики кнопок
+  document.getElementById('sendGreen').addEventListener('click', () => sendAnnouncement(true));
+  document.getElementById('sendRed').addEventListener('click', () => sendAnnouncement(false));
+
+  // Загрузка объявлений при загрузке страницы
+  window.addEventListener('load', () => {
+    loadAnnouncementsFromStorage();
+    restoreCounterFromStorage();
+  });
 </script>
 
 </body>
