@@ -235,7 +235,7 @@
         const blob = item.getAsFile();
         const URLObj = window.URL || window.webkitURL;
         const source = URLObj.createObjectURL(blob);
-        previewElement.innerHTML = <img src="${source}" class="image-preview" />;
+        previewElement.innerHTML = `<img src="${source}" class="image-preview" />`;
         imageFound = true;
         break;
       }
@@ -252,7 +252,7 @@
     div.classList.add(isGreen ? 'green-announcement' : 'red-announcement');
 
     const nickLine = document.createElement('div');
-    nickLine.textContent = Ник: ${nickname || 'Гость'};
+    nickLine.textContent = `Ник: ${nickname || 'Гость'}`;
     nickLine.style.fontWeight = '700';
     div.appendChild(nickLine);
 
@@ -269,7 +269,7 @@
 
     const metaLine = document.createElement('div');
     metaLine.className = 'meta';
-    metaLine.textContent = Отправлено: ${formatDateTime(date)};
+    metaLine.textContent = `Отправлено: ${formatDateTime(date)}`;
     div.appendChild(metaLine);
 
     return div;
@@ -302,9 +302,9 @@
     const webhookURL = isGreen ? 'https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ' : 'https://discord.com/api/webhooks/1400575914089254933/ELFUVPHElOfYJCzQb56kMsIgvIgQrS735Ij5LbfRRXD3KiMV566Yup3cv8GIDWahVDzb';
 
     // Формируем содержимое для Discord
-    const content = **${isGreen ? "🟢Зеленое объявление" : "🔴Красное объявление"}**\n +
-                    Ник: ${nickname || 'Гость'}\n +
-                    Отправлено: ${formatDateTime(now)};
+    const content = `**${isGreen ? "🟢Зеленое объявление" : "🔴Красное объявление"}**\n` +
+                    `Ник: ${nickname || 'Гость'}\n` +
+                    `Отправлено: ${formatDateTime(now)}`;
 
     const formData = new FormData();
     formData.append('payload_json', JSON.stringify({ content }));
