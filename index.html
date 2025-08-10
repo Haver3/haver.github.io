@@ -200,13 +200,11 @@
 <audio id="toastSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg"></audio>
 
 <script>
-  // ... остальной код без изменений
-
   async function sendAnnouncement(isGreen) {
     const textArea = isGreen ? document.getElementById('greenInput') : document.getElementById('redInput');
     const preview = isGreen ? document.getElementById('greenPreview') : document.getElementById('redPreview');
     const announcementsContainer = isGreen ? document.getElementById('greenAnnouncements') : document.getElementById('redAnnouncements');
-    const nickname = nicknameInput.value.trim();
+    const nickname = document.getElementById('nicknameInput').value.trim();
 
     const text = textArea.value.trim();
     const imgEl = preview.querySelector('img');
@@ -222,7 +220,6 @@
     // Добавляем объявление на страницу
     const announcement = announcementCounter(text, imgSrc, nickname, now, isGreen);
     announcementsContainer.prepend(announcement);
-        
 
     const webhookURL = isGreen
       ? 'https://discord.com/api/webhooks/1400575916534530141/JEB23DFLpB0tjbSLxIrTUKFp4TIZDca_UKibt3zI3VTNasovMzZSS-7pV9k5YjhDNTMQ'
@@ -230,33 +227,14 @@
 
     const content = `**${isGreen ? "🟢Зеленое объявление" : "🔴Красное объявление"}**\n` +
                     `Ник: ${nickname || 'Гость'}\n` +
-                    `Отправлено: ${formatDateTime(now)}`;
+                    `Отправлено: ${formatDateTime(now)}\n\n${text}`;
 
-    const formData = new FormData();
-    formData.append('payload_json', JSON.stringify({ content }));
-
-    if (imgSrc) {
-      try {
-        const response = await fetch(imgSrc);
-        const blob = await response.blob();
-        formData.append('file', blob, 'image.png');
-
-        // 🔽 Автоматическое сохранение картинки на компьютер
-        const link = document.createElement('a');
-        link.href = imgSrc;
-        link.download = `${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-      } catch (e) {
-        console.warn('Ошибка загрузки изображения:', e);
-      }
-    }
+    const fullContent = imgSrc ? content + `\n${imgSrc}` : content;
 
     fetch(webhookURL, {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: fullContent }),
     }).then(res => {
       if (res.ok) {
         showToast("✅ Отправлено в Discord!");
@@ -269,8 +247,6 @@
       showToast("❌ Ошибка отправки!");
     });
   }
-
-  // ... остальной код без изменений
 </script>
 
 </body>
