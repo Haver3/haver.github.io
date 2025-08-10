@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Объявления </title>
+<title>Объявления</title>
 <style>
+  /* Стили оставляем без изменений (как в предыдущем коде) */
   body {
     font-family: Arial, sans-serif;
     margin: 20px;
@@ -158,9 +159,9 @@
     font-weight: 600;
   }
   #nicknameInput {
-  width: 150px;       /* фиксированная небольшая ширина */
-  height: 30px;       /* высота поменьше */
-  font-size: 14px;    /* чуть поменьше шрифт */
+  width: 150px;
+  height: 30px;
+  font-size: 14px;
   padding: 4px 8px;
   margin-bottom: 20px;
   border-radius: 5px;
@@ -200,10 +201,8 @@
 <audio id="toastSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg"></audio>
 
 <script>
-  // Ник из localStorage
   const nicknameInput = document.getElementById('nicknameInput');
   nicknameInput.value = localStorage.getItem('nickname') || '';
-
   nicknameInput.addEventListener('input', () => {
     localStorage.setItem('nickname', nicknameInput.value);
   });
@@ -213,7 +212,6 @@
     toast.textContent = message;
     toast.classList.add("show");
     document.getElementById("toastSound").play();
-
     setTimeout(() => {
       toast.classList.remove("show");
     }, 3000);
@@ -226,10 +224,8 @@
     });
   }
 
-  // Счётчик объявлений с localStorage
   let announcementCounter = parseInt(localStorage.getItem('announcementCounter')) || 0;
 
-  // Извлечение картинки из paste в preview
   function extractImageFromPaste(e, previewElement) {
     const items = (e.clipboardData || e.originalEvent.clipboardData).items;
     let imageFound = false;
@@ -248,7 +244,6 @@
     }
   }
 
-  // Создаем элемент объявления с нумерацией
   function createAnnouncement(text, imgSrc, nickname, date, isGreen) {
     announcementCounter++;
     localStorage.setItem('announcementCounter', announcementCounter);
@@ -281,7 +276,45 @@
     return div;
   }
 
-  // Обработка отправки
+  // Здесь подставь свои URL вебхуков Discord:
+  const DISCORD_WEBHOOK_URL_GREEN = 'YOUR_DISCORD_WEBHOOK_URL_GREEN';
+  const DISCORD_WEBHOOK_URL_RED = 'YOUR_DISCORD_WEBHOOK_URL_RED';
+
+  async function sendToDiscord(webhookUrl, content, username, imageBase64) {
+    const payload = {
+      username: username,
+      content: content,
+    };
+
+    if (imageBase64) {
+      // Отправляем изображение через embed
+      payload.embeds = [{
+        image: {
+          url: imageBase64
+        }
+      }];
+    }
+
+    // Отправляем POST запрос
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error('Ошибка отправки в Discord');
+    } catch (err) {
+      alert('Не удалось отправить сообщение в Discord: ' + err.message);
+      throw err;
+    }
+  }
+
+  // Конвертация изображения из src в base64 для отправки (т.к. webhook не принимает local URL, надо использовать файл или ссылку)
+  // К сожалению, прямое использование blob url не работает, поэтому можно либо отправить только текст + ник,
+  // либо добавить поле для вставки ссылки на картинку, либо использовать upload API Discord (требует авторизацию)
+  // Для простоты — отправим текст и ник, а если есть картинка — напишем "Изображение приложено локально" (т.к. прямое прикрепление через webhook без сервера — невозможно).
+  // Можно заменить на загрузку картинки куда-то (imgur и т.п.) и получить ссылку, но это сложнее.
+
   async function sendAnnouncement(isGreen) {
     const textArea = isGreen ? document.getElementById('greenInput') : document.getElementById('redInput');
     const preview = isGreen ? document.getElementById('greenPreview') : document.getElementById('redPreview');
@@ -300,21 +333,31 @@
 
     const now = new Date();
 
-    // Создаем и добавляем в контейнер объявление с нумерацией
-    const announcementElement = createAnnouncement(text, imgSrc, nickname, now, isGreen);
-    announcementsContainer.prepend(announcementElement);
+    try {
+      let content = `**Ник:** ${nickname}\n**Текст:** ${text}`;
+      if (imgSrc && imgSrc.startsWith('blob:')) {
+        content += '\n*Изображение приложено локально, поэтому не отправлено в Discord.*';
+      } else if (imgSrc) {
+        // Если есть публичный URL картинки, можем вставить её ссылку
+        content += `\n${imgSrc}`;
+      }
+      const webhookUrl = isGreen ? DISCORD_WEBHOOK_URL_GREEN : DISCORD_WEBHOOK_URL_RED;
+      await sendToDiscord(webhookUrl, content, nickname, null);
 
-    // Сохраняем объявление в localStorage
-    saveAnnouncementsToStorage();
+      // Создаем и добавляем в контейнер объявление с нумерацией
+      const announcementElement = createAnnouncement(text, imgSrc, nickname, now, isGreen);
+      announcementsContainer.prepend(announcementElement);
 
-    // Очистка полей
-    textArea.value = '';
-    preview.innerHTML = '';
+      saveAnnouncementsToStorage();
 
-    showToast();
+      textArea.value = '';
+      preview.innerHTML = '';
+      showToast();
+    } catch {
+      // Ошибка отправки — уже показана alert'ом
+    }
   }
 
-  // Сохраняем все объявления в localStorage
   function saveAnnouncementsToStorage() {
     const greenContainer = document.getElementById('greenAnnouncements');
     const redContainer = document.getElementById('redAnnouncements');
@@ -343,7 +386,6 @@
     localStorage.setItem('redAnnouncements', JSON.stringify(redAnnouncements));
   }
 
-  // Загрузка объявлений из localStorage при загрузке страницы
   function loadAnnouncementsFromStorage() {
     const greenContainer = document.getElementById('greenAnnouncements');
     const redContainer = document.getElementById('redAnnouncements');
@@ -364,7 +406,6 @@
     }
   }
 
-  // Восстановление счётчика при загрузке (если объявлений в хранилище есть, берём максимальный номер)
   function restoreCounterFromStorage() {
     const allNumbers = [];
     const greenContainer = document.getElementById('greenAnnouncements');
@@ -388,7 +429,6 @@
     }
   }
 
-  // Обработчики вставки картинок в textarea
   document.getElementById('greenInput').addEventListener('paste', (e) => {
     extractImageFromPaste(e, document.getElementById('greenPreview'));
   });
@@ -397,11 +437,9 @@
     extractImageFromPaste(e, document.getElementById('redPreview'));
   });
 
-  // Обработчики кнопок
   document.getElementById('sendGreen').addEventListener('click', () => sendAnnouncement(true));
   document.getElementById('sendRed').addEventListener('click', () => sendAnnouncement(false));
 
-  // Загрузка объявлений при загрузке страницы
   window.addEventListener('load', () => {
     loadAnnouncementsFromStorage();
     restoreCounterFromStorage();
